@@ -105,11 +105,37 @@ class Graph:
         Format is a dict where the key is the node_id and the value is an integer for the node degree
         e.g. {'a': 8}
         or {'a': 22, 'b': 22}
+
+        https://stackoverflow.com/questions/38555385/removing-duplicate-edges-from-graph-in-python-list
         """
         max_deg_nodes = {}
+        d = {}
+        deg_nodes = {}
+        highest_deg = 0
 
+        #First populate all the nodes in the deg_nodes to keep track
+        for node in self.nodes:
+            deg_nodes[node[0]] = []
 
-        return NotImplemented
+        #Second populate deg_nodes with edges, but do not duplicate since undirected graph
+        #Keep only one edge
+        for id in deg_nodes:
+            for edge in self.edges:
+                if edge[0] == id and edge[0] not in deg_nodes[edge[1]]:
+                    deg_nodes[id].append(edge[1])
+
+        #Third populate max_deg_nodes with deg number of each node. Find highest degree and track
+        for id, nodes in deg_nodes.items():
+            max_deg_nodes[id] = len(nodes)
+            if len(nodes) > highest_deg:
+                highest_deg = len(nodes)
+
+        #Finally, only copy the node(s) with the higest degree to the final dict
+        for id in max_deg_nodes:
+            if max_deg_nodes[id] == highest_deg:
+                d[id] = max_deg_nodes[id]
+
+        return d
 
 
     def print_nodes(self):
@@ -341,10 +367,17 @@ if __name__ == "__main__":
     graph.add_node(id="4521", name='Tom Cruise')
     graph.add_node(id="0293", name='Amir Khan')
     graph.add_node(id="1923", name='Johnny Depp')
+    graph.add_node(id="5623", name='Ali Zafar')
 
 
     graph.add_edge(source="2975", target="4521")
+    graph.add_edge(source="4521", target="2975")
+    graph.add_edge(source="2975", target="5623")
     graph.add_edge(source="1923", target="4521")
+    graph.add_edge(source="4521", target="5623")
+    graph.add_edge(source="0293", target="1923")
+    graph.add_edge(source="1923", target="0293")
+    graph.add_edge(source="4521", target="1923")
 
     tmdb_api_utils = TMDBAPIUtils(api_key='<your API key>')
 
@@ -361,6 +394,8 @@ if __name__ == "__main__":
     print("Edges:")
     graph.print_edges()
     graph.total_edges()
-    print("\nNodes:")
+    print("Nodes:")
     graph.print_nodes()
     graph.total_nodes()
+
+    print(graph.max_degree_nodes())
