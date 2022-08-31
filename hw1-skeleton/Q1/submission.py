@@ -108,34 +108,44 @@ class Graph:
 
         https://stackoverflow.com/questions/38555385/removing-duplicate-edges-from-graph-in-python-list
         """
-        max_deg_nodes = {}
-        d = {}
-        deg_nodes = {}
+
+        r = set()
+        for edge in self.edges:
+            if (edge[1], edge[0]) in r:
+                continue
+            r.add((edge[0], edge[1]))
+        print(f"r is: {r}")
+
         highest_deg = 0
-
         #First populate all the nodes in the deg_nodes to keep track
-        for node in self.nodes:
-            deg_nodes[node[0]] = []
+        all_nodes = {node[0]:[] for node in self.nodes}
+        print(f"All nodes: {all_nodes}\n")
+        for edge in r:
+            print(f"Edge: {edge}")
+            if edge[0] in all_nodes[edge[1]]:
+                print("Stage 1 - skipped")
+                continue
 
-        #Second populate deg_nodes with edges, but do not duplicate since undirected graph
-        #Keep only one edge
-        for id in deg_nodes:
-            for edge in self.edges:
-                if edge[0] == id and edge[0] not in deg_nodes[edge[1]]:
-                    deg_nodes[id].append(edge[1])
+            elif all_nodes[edge[1]]:
+                print("Stage 2")
+                all_nodes[edge[1]].append(edge[0])
 
-        #Third populate max_deg_nodes with deg number of each node. Find highest degree and track
-        for id, nodes in deg_nodes.items():
-            max_deg_nodes[id] = len(nodes)
-            if len(nodes) > highest_deg:
-                highest_deg = len(nodes)
+            else:
+                print("Stage 3")
+                if edge[1] in all_nodes[edge[0]]:
+                    print("Stage 3 - skipped")
+                    continue
+                all_nodes[edge[0]].append(edge[1])
 
-        #Finally, only copy the node(s) with the higest degree to the final dict
-        for id in max_deg_nodes:
-            if max_deg_nodes[id] == highest_deg:
-                d[id] = max_deg_nodes[id]
+        print(f"\nall nodes updated: {all_nodes}")
 
-        return d
+        for id in all_nodes:
+            if len(all_nodes[id]) > highest_deg:
+                highest_deg = len(all_nodes[id])
+
+        max_deg_nodes = {id:len(all_nodes[id]) for id in all_nodes if len(all_nodes[id]) == highest_deg}
+
+        return max_deg_nodes
 
 
     def print_nodes(self):
@@ -364,20 +374,7 @@ if __name__ == "__main__":
 
     graph = Graph()
     graph.add_node(id='2975', name='Laurence Fishburne')
-    graph.add_node(id="4521", name='Tom Cruise')
-    graph.add_node(id="0293", name='Amir Khan')
-    graph.add_node(id="1923", name='Johnny Depp')
-    graph.add_node(id="5623", name='Ali Zafar')
 
-
-    graph.add_edge(source="2975", target="4521")
-    graph.add_edge(source="4521", target="2975")
-    graph.add_edge(source="2975", target="5623")
-    graph.add_edge(source="1923", target="4521")
-    graph.add_edge(source="4521", target="5623")
-    graph.add_edge(source="0293", target="1923")
-    graph.add_edge(source="1923", target="0293")
-    graph.add_edge(source="4521", target="1923")
 
     tmdb_api_utils = TMDBAPIUtils(api_key='<your API key>')
 
