@@ -1,6 +1,7 @@
 import http.client
 import json
 import csv
+import urllib.request
 
 
 #############################################################################################################################
@@ -109,43 +110,33 @@ class Graph:
         https://stackoverflow.com/questions/38555385/removing-duplicate-edges-from-graph-in-python-list
         """
 
-        r = set()
+        # Initialize highest degree to zero
+        # Set max_degree_nodes to empty dict
+        highest_degree = 0
+        max_degree_nodes = {}
+
+        # 1. Clean the edge list with no duplicates - count only one direction. Store in r_edge
+        r_edge = set()
         for edge in self.edges:
-            if (edge[1], edge[0]) in r:
+            if (edge[1], edge[0]) in r_edge:
                 continue
-            r.add((edge[0], edge[1]))
-        print(f"r is: {r}")
+            r_edge.add((edge[0], edge[1]))
 
-        highest_deg = 0
-        #First populate all the nodes in the deg_nodes to keep track
-        all_nodes = {node[0]:[] for node in self.nodes}
-        print(f"All nodes: {all_nodes}\n")
-        for edge in r:
-            print(f"Edge: {edge}")
-            if edge[0] in all_nodes[edge[1]]:
-                print("Stage 1 - skipped")
-                continue
+        # 2. Create a new graph skeleton with all target nodes. 'target node':['source nodes']
+        graph = {edge[1]:[] for edge in r_edge}
 
-            elif all_nodes[edge[1]]:
-                print("Stage 2")
-                all_nodes[edge[1]].append(edge[0])
+        # 3. Populate graph. 'target node':['source nodes']
+        #    Check if graph[target] has highest number of source nodes. Compare against highest_degree
+        for edge in r_edge:
+            source = edge[0]
+            target = edge[1]
+            graph[target].append(source)
+            if len(graph[target]) > highest_degree:
+                highest_degree = len(graph[target])
 
-            else:
-                print("Stage 3")
-                if edge[1] in all_nodes[edge[0]]:
-                    print("Stage 3 - skipped")
-                    continue
-                all_nodes[edge[0]].append(edge[1])
-
-        print(f"\nall nodes updated: {all_nodes}")
-
-        for id in all_nodes:
-            if len(all_nodes[id]) > highest_deg:
-                highest_deg = len(all_nodes[id])
-
-        max_deg_nodes = {id:len(all_nodes[id]) for id in all_nodes if len(all_nodes[id]) == highest_deg}
-
-        return max_deg_nodes
+        # 4. Append target id with degree of nodes to max_deg_nodes dict
+        max_degree_nodes = {id:len(graph[id]) for id in graph if len(graph[id]) == highest_degree}
+        return max_degree_nodes
 
 
     def print_nodes(self):
@@ -231,8 +222,37 @@ class  TMDBAPIUtils:
                 'credit_id': '52fe4249c3a36847f8012927' # id of the credit, ...}, ... ]
                 Note that this is an example of the structure of the list and some of the fields returned by the API.
                 The result of the API call will include many more fields for each cast member.
+
         """
-        return NotImplemented
+        cast_members = []
+        API_BASE_URL = f'https://api.themoviedb.org/3/movie/{movie_id}/credits?api_key={self.api_key}&language=en-US'
+
+        # 1. Using urllib, fetch JSON data to the API_BASE_URL
+        request = urllib.request.Request(API_BASE_URL)
+        with urllib.request.urlopen(request) as response:
+            res = response.read().decode('utf-8')
+            data = json.loads(res)
+
+        # 2. Filter JSON data by cast and store it to cast_data
+        cast_data = data["cast"]
+
+        # 3. Using the above restrictions, populate the list cast_members with dicts
+        for cast in cast_data:
+            if limit == None:
+                if exclude_ids != None and cast['id'] in exclude_ids:
+                    print(f"Exlcuding cast member id: {cast['id']}. Info: {cast}")
+                    continue
+                else:
+                    cast_members.append(cast)
+            else:
+                if exclude_ids == None:
+                    if cast['order'] < limit:
+                        cast_members.append(cast)
+                else:
+                    if cast['id'] not in exclude_ids and cast['order'] < limit:
+                        cast_members.append(cast)
+
+        return cast_members
 
 
     def get_movie_credits_for_person(self, person_id:str, vote_avg_threshold:float=None)->list:
@@ -249,8 +269,29 @@ class  TMDBAPIUtils:
                 [{'id': '97909' # the id of the movie credit
                 'title': 'Long, Stock and Two Smoking Barrels' # the title (not original title) of the credit
                 'vote_avg': 5.0 # the float value of the vote average value for the credit}, ... ]
+
+                https://api.themoviedb.org/3/person/8/movie_credits?api_key=edc3f4b783865a2e79f271e73c1522ad&language=en-US
         """
-        return NotImplemented
+
+        movies = []
+        API_BASE_URL = f'https://api.themoviedb.org/3/person/{person_id}/movie_credits?api_key={self.api_key}&language=en-US'
+
+        # 1. Using urllib, fetch JSON data to the API_BASE_URL
+        request = urllib.request.Request(API_BASE_URL)
+        with urllib.request.urlopen(request) as response:
+            res = response.read().decode('utf-8')
+            actor_data = json.loads(res)
+
+        # 2. Using the above restrictions, populate the list movies with dicts, check vote_avg_threshold if it is not None
+        for movie in actor_data['cast']:
+            vote_average = movie['vote_average']
+            if vote_avg_threshold == None:
+                movies.append(movie)
+            else:
+                if vote_average >= vote_avg_threshold:
+                    movies.append(movie)
+        print(f"Movies by id: {person_id}: {movies}")
+        return movies
 
 
 #############################################################################################################################
@@ -356,7 +397,7 @@ def return_name()->str:
     e.g., gburdell3
     Do not return your 9 digit GTId
     """
-    return NotImplemented
+    return 'msyed46'
 
 
 def return_argo_lite_snapshot()->str:
@@ -375,11 +416,29 @@ if __name__ == "__main__":
     graph = Graph()
     graph.add_node(id='2975', name='Laurence Fishburne')
 
+    tmdb_api_utils = TMDBAPIUtils(api_key='edc3f4b783865a2e79f271e73c1522ad')
 
-    tmdb_api_utils = TMDBAPIUtils(api_key='<your API key>')
+    movies = tmdb_api_utils.get_movie_credits_for_person(person_id='2975', vote_avg_threshold=8.0)
 
+    for each_movie in movies:
+        movie_id = each_movie['id']
+        movie_cast_members = tmdb_api_utils.get_movie_cast(movie_id=movie_id, limit=3)
+        print(f"length of movie cast members: {len(movie_cast_members)}")
+        for cast_member in movie_cast_members:
+            target_id = str(cast_member['id'])
+            target_name = str(cast_member['name'])
+            graph.add_node(id=target_id, name=target_name)
+            graph.add_edge(source='2975', target=target_id)
+
+    print(f"Movie Cast Members: {movie_cast_members}")
     # call functions or place code here to build graph (graph building code not graded)
     # Suggestion: code should contain steps outlined above in BUILD CO-ACTOR NETWORK
+    print(f"Nodes:")
+    graph.print_nodes()
+    print(f"Edges:")
+    graph.print_edges()
+    graph.total_edges()
+    graph.total_nodes()
 
     graph.write_edges_file()
     graph.write_nodes_file()
@@ -388,11 +447,3 @@ if __name__ == "__main__":
     # to perform testing on your graph.
     # graph = Graph(with_edges_file="edges.csv", with_nodes_file="nodes.csv")
 
-    print("Edges:")
-    graph.print_edges()
-    graph.total_edges()
-    print("Nodes:")
-    graph.print_nodes()
-    graph.total_nodes()
-
-    print(graph.max_degree_nodes())
