@@ -56,7 +56,6 @@ class Graph:
             edges_CSV = list(edges_CSV)[1:]
             self.edges = [(e[0], e[1]) for e in edges_CSV]
 
-
     def add_node(self, id: str, name: str) -> None:
         """
         add a tuple (id, name) representing a node to self.nodes if it does not already exist
@@ -67,7 +66,6 @@ class Graph:
             self.nodes.append(node)
 
         return None
-
 
     def add_edge(self, source: str, target: str) -> None:
         """
@@ -82,22 +80,19 @@ class Graph:
 
         return None
 
-
     def total_nodes(self) -> int:
         """
         Returns an integer value for the total number of nodes in the graph
         """
-        print(len(self.nodes))
+        print(f"Total Nodes: {len(self.nodes)}")
         return len(self.nodes)
-
 
     def total_edges(self) -> int:
         """
         Returns an integer value for the total number of edges in the graph
         """
-        print(len(self.edges))
+        print(f"Total Edges: {len(self.edges)}")
         return len(self.edges)
-
 
     def max_degree_nodes(self) -> dict:
         """
@@ -116,28 +111,28 @@ class Graph:
         max_degree_nodes = {}
 
         # 1. Clean the edge list with no duplicates - count only one direction. Store in r_edge
-        r_edge = set()
+        r_edge = []
         for edge in self.edges:
             if (edge[1], edge[0]) in r_edge:
                 continue
-            r_edge.add((edge[0], edge[1]))
-
-        # 2. Create a new graph skeleton with all target nodes. 'target node':['source nodes']
-        graph = {edge[1]:[] for edge in r_edge}
+            r_edge.append((edge[0], edge[1]))
+        print(f"r_edge: {r_edge}")
+        # 2. Create a new dict 'g' skeleton with all target nodes. 'target node':['source nodes']
+        g = {edge[1]: [] for edge in r_edge}
 
         # 3. Populate graph. 'target node':['source nodes']
         #    Check if graph[target] has highest number of source nodes. Compare against highest_degree
         for edge in r_edge:
             source = edge[0]
             target = edge[1]
-            graph[target].append(source)
-            if len(graph[target]) > highest_degree:
-                highest_degree = len(graph[target])
+            g[target].append(source)
+            if len(g[target]) > highest_degree:
+                highest_degree = len(g[target])
 
+        print(f"incident node graph g: {g}")
         # 4. Append target id with degree of nodes to max_deg_nodes dict
-        max_degree_nodes = {id:len(graph[id]) for id in graph if len(graph[id]) == highest_degree}
+        max_degree_nodes = {id: len(g[id]) for id in g if len(g[id]) == highest_degree}
         return max_degree_nodes
-
 
     def print_nodes(self):
         """
@@ -146,7 +141,6 @@ class Graph:
         """
         print(self.nodes)
 
-
     def print_edges(self):
         """
         No further implementation required
@@ -154,9 +148,8 @@ class Graph:
         """
         print(self.edges)
 
-
     # Do not modify
-    def write_edges_file(self, path="edges.csv")->None:
+    def write_edges_file(self, path="edges.csv") -> None:
         """
         write all edges out as .csv
         :param path: string
@@ -173,9 +166,8 @@ class Graph:
         edges_file.close()
         print("finished writing edges to csv")
 
-
     # Do not modify
-    def write_nodes_file(self, path="nodes.csv")->None:
+    def write_nodes_file(self, path="nodes.csv") -> None:
         """
         write all nodes out as .csv
         :param path: string
@@ -191,15 +183,13 @@ class Graph:
         print("finished writing nodes to csv")
 
 
-
-class  TMDBAPIUtils:
+class TMDBAPIUtils:
 
     # Do not modify
-    def __init__(self, api_key:str):
-        self.api_key=api_key
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
-
-    def get_movie_cast(self, movie_id:str, limit:int=None, exclude_ids:list=None) -> list:
+    def get_movie_cast(self, movie_id: str, limit: int = None, exclude_ids: list = None) -> list:
         """
         Get the movie cast for a given movie id, with optional parameters to exclude an cast member
         from being returned and/or to limit the number of returned cast members
@@ -238,24 +228,32 @@ class  TMDBAPIUtils:
 
         # 3. Using the above restrictions, populate the list cast_members with dicts
         for cast in cast_data:
-            if limit == None:
-                if exclude_ids != None and cast['id'] in exclude_ids:
-                    print(f"Exlcuding cast member id: {cast['id']}. Info: {cast}")
-                    continue
-                else:
+            if limit is None:
+                if exclude_ids is None:
                     cast_members.append(cast)
+                else:
+                    if cast['id'] in exclude_ids:
+                        continue
+                    else:
+                        cast_members.append(cast)
             else:
-                if exclude_ids == None:
+                if exclude_ids is None:
                     if cast['order'] < limit:
                         cast_members.append(cast)
                 else:
-                    if cast['id'] not in exclude_ids and cast['order'] < limit:
-                        cast_members.append(cast)
+                    if cast['order'] < limit:
+                        if cast['id'] in exclude_ids:
+                            continue
+                        else:
+                            cast_members.append(cast)
+                    else:
+                        continue
+
+
 
         return cast_members
 
-
-    def get_movie_credits_for_person(self, person_id:str, vote_avg_threshold:float=None)->list:
+    def get_movie_credits_for_person(self, person_id: str, vote_avg_threshold: float = None) -> list:
         """
         Using the TMDb API, get the movie credits for a person serving in a cast role
         documentation url: https://developers.themoviedb.org/3/people/get-person-movie-credits
@@ -290,7 +288,7 @@ class  TMDBAPIUtils:
             else:
                 if vote_average >= vote_avg_threshold:
                     movies.append(movie)
-        print(f"Movies by id: {person_id}: {movies}")
+        #print(f"Movies by id: {person_id}: {movies}")
         return movies
 
 
@@ -391,7 +389,7 @@ class  TMDBAPIUtils:
 #   - wait a while and then try again.  It may be necessary to insert periodic sleeps when you are building your graph.
 
 
-def return_name()->str:
+def return_name() -> str:
     """
     Return a string containing your GT Username
     e.g., gburdell3
@@ -400,12 +398,159 @@ def return_name()->str:
     return 'msyed46'
 
 
-def return_argo_lite_snapshot()->str:
+def return_argo_lite_snapshot() -> str:
     """
     Return the shared URL of your published graph in Argo-Lite
     """
-    return NotImplemented
+    url = "https://poloclub.github.io/argo-graph-lite/#76b9359e-f9a2-47d6-be1d-408dabb66053"
+    return url
 
+def list_to_dict(list_item):
+
+    d = {item:value for item, value in list_item}
+    print(f"d is : {d}")
+    return d
+
+def build_base_graph():
+    movies = tmdb_api_utils.get_movie_credits_for_person(person_id='2975', vote_avg_threshold=8.0)
+
+    for each_movie in movies:
+        movie_id = each_movie['id']
+        movie_cast_members = tmdb_api_utils.get_movie_cast(movie_id=movie_id, limit=3, exclude_ids=[2975])
+        for cast_member in movie_cast_members:
+            target_id = str(cast_member['id'])
+            target_name = str(cast_member['name'])
+
+            if target_id == '2975':
+                continue
+            graph.add_node(id=target_id, name=target_name)
+            graph.add_edge(source='2975', target=target_id)
+
+    count = 1
+
+    node_dict = list_to_dict(graph.nodes)
+    int_list_of_node_ids = [int(node[0]) for node in graph.nodes]
+    print(f"LIST OF NODE IDS: {int_list_of_node_ids}")
+
+    while count < 3:
+        if count == 1:
+            nodes = [node for node in graph.nodes if node[0] != '2975']
+        else:
+            pass
+
+        # Find Highest rated movies for each actor in the nodes
+        for node in nodes:
+            actor_id = node[0]
+            actor_name = node[1]
+            #print('\n---------------------------------------------------')
+            #print(f"For the actor: {actor_name} with actor_id: {actor_id}")
+            highest_rated_movies = tmdb_api_utils.get_movie_credits_for_person(person_id=actor_id,
+                                                                               vote_avg_threshold=8.0)
+
+            # For each highest rated movie, find co-actors with order limit 3. Exclude starting actor.
+            for movie in highest_rated_movies:
+                #print(f"\nFor Highest Rated Movie: {movie['original_title']}")
+                movie_id = str(movie['id'])
+                cast_members = tmdb_api_utils.get_movie_cast(movie_id=movie_id, limit=3, exclude_ids=[int(actor_id)])
+
+                for co_actor in cast_members:
+                    unwanted_char = ","
+                    if unwanted_char in co_actor['original_name']:
+                        name = co_actor['original_name'].replace(unwanted_char, "")
+                        co_actor['original_name'] = name
+                        print(f"New name: {co_actor['original_name']}")
+
+                    #print(f"ACTOR: {actor_name}, CO-ACTOR: {co_actor['name']}, CO-ACTOR ORDER: {co_actor['order']}, CO_ACTOR ID: {co_actor['id']}")
+                    if co_actor['id'] not in int_list_of_node_ids:
+                        #print(f"ADDING {co_actor['original_name']}")
+                        graph.add_node(id=str(co_actor['id']), name=co_actor['original_name'])
+
+                    edge = (str(actor_id), str(co_actor['id']))
+                    if edge not in graph.edges:
+                        #print(f"ADDING NEW EDGE {actor_name} and {co_actor['original_name']}")
+                        graph.add_edge(source=str(actor_id), target=str(co_actor['id']))
+
+        count += 1
+
+    print(f"\nPrinting NODES: {nodes} \n and length {len(nodes)}")
+    print(f"\n\nBASE GRAPH NODES:")
+    graph.print_nodes()
+    print(f"\nBASE GRAPH EDGES:")
+    graph.print_edges()
+
+    print("Total Nodes:", graph.total_nodes())
+    print("Total Edges:", graph.total_edges())
+
+def test_graph_nodes():
+    graph.add_node(id="6384", name="Keanu Reeves")
+    graph.add_node(id="110380", name="Colin Powell")
+    graph.add_node(id="3087", name="Robert Duvall")
+    graph.add_node(id="5139", name="Robert Englund")
+    graph.add_node(id="5141", name="Heather Langenkamp")
+    graph.add_node(id="74611", name="Tracee Ellis Ross")
+
+    graph.add_edge(source="74611", target="6384")
+    graph.add_edge(source="6384", target="110380")
+    graph.add_edge(source="5139", target="74611")
+    graph.add_edge(source="5139", target="6384")
+    graph.add_edge(source="5139", target="5141")
+    graph.add_edge(source="110380", target="5139")
+    graph.add_edge(source="110380", target="5141")
+    graph.add_edge(source="110380", target="2975")
+    graph.add_edge(source="5141", target="2975")
+    graph.add_edge(source="5141", target="3087")
+    graph.add_edge(source="3087", target="2975")
+
+    graph.add_edge(source="110380", target="6384")
+    graph.add_edge(source="5141", target="110380")
+    graph.add_edge(source="5141", target="6384")
+    graph.add_edge(source="6384", target="5141")
+    graph.add_edge(source="2975", target="110380")
+    graph.add_edge(source="2975", target="5141")
+    graph.add_edge(source="2975", target="3087")
+
+    print("NODES:")
+    graph.print_nodes()
+    graph.total_nodes()
+    print("\nEDGES:")
+    graph.print_edges()
+    graph.total_edges()
+    max_deg = graph.max_degree_nodes()
+    print(f"\nMax Degree Nodes: {max_deg}")
+
+def test_graph():
+    graph.add_node(id="1000", name="Colin Powell")
+    graph.add_node(id="2000", name="Robert Duvall")
+    graph.add_node(id="3000", name="Robert Englund")
+
+    graph.add_edge(source="2975", target="3000")
+    graph.add_edge(source="1000", target="3000")
+    graph.add_edge(source="2000", target="3000")
+
+    graph.add_edge(source="3000", target="2000")
+    graph.add_edge(source="2975", target="2000")
+
+    graph.add_edge(source="1000", target="2975")
+    graph.add_edge(source="2000", target="2975")
+    graph.add_edge(source="3000", target="2975")
+
+
+    print("\nNODES:")
+    graph.print_nodes()
+    graph.total_nodes()
+    print("\nEDGES:")
+    graph.print_edges()
+    graph.total_edges()
+    max_deg = graph.max_degree_nodes()
+    print(f"\nMax Degree Nodes: {max_deg}")
+
+def TMDB_test_functions(id):
+    movie_cast = tmdb_api_utils.get_movie_cast(movie_id=str(id), limit=5, exclude_ids=[8, 569, 651, 652])
+
+    print(f"Cast Members: {movie_cast}")
+    print(f"The lenght of movie cast is: {len(movie_cast)}")
+    for member in movie_cast:
+        print(f"Actor Name: {member['original_name']}, Actor ID: {member['id']}, Order: {member['order']}")
 
 
 # You should modify __main__ as you see fit to build/test your graph using  the TMDBAPIUtils & Graph classes.
@@ -418,28 +563,11 @@ if __name__ == "__main__":
 
     tmdb_api_utils = TMDBAPIUtils(api_key='edc3f4b783865a2e79f271e73c1522ad')
 
-    movies = tmdb_api_utils.get_movie_credits_for_person(person_id='2975', vote_avg_threshold=8.0)
 
-    for each_movie in movies:
-        movie_id = each_movie['id']
-        movie_cast_members = tmdb_api_utils.get_movie_cast(movie_id=movie_id, limit=3)
-        print(f"length of movie cast members: {len(movie_cast_members)}")
-        for cast_member in movie_cast_members:
-            target_id = str(cast_member['id'])
-            target_name = str(cast_member['name'])
-            graph.add_node(id=target_id, name=target_name)
-            graph.add_edge(source='2975', target=target_id)
 
-    print(f"Movie Cast Members: {movie_cast_members}")
     # call functions or place code here to build graph (graph building code not graded)
     # Suggestion: code should contain steps outlined above in BUILD CO-ACTOR NETWORK
-    print(f"Nodes:")
-    graph.print_nodes()
-    print(f"Edges:")
-    graph.print_edges()
-    graph.total_edges()
-    graph.total_nodes()
-
+    build_base_graph()
     graph.write_edges_file()
     graph.write_nodes_file()
 
@@ -447,3 +575,6 @@ if __name__ == "__main__":
     # to perform testing on your graph.
     # graph = Graph(with_edges_file="edges.csv", with_nodes_file="nodes.csv")
 
+    #test_graph_nodes()
+    #test_graph()
+    # TMDB_test_functions(80)
