@@ -6,10 +6,12 @@
 <head>
   <style>
     body {
-
     }
     #bars {
         fill: teal;
+    }
+    rect {
+        margin: 10px;
     }
   </style>
 <html xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
@@ -79,6 +81,7 @@
 	
     d3.dsv(",", pathToCsv, function (d) {
         //var year = parseInt(d.year);
+        console.log(d)
         var running_total = parseInt(d.running_total);
         //d.year = year
         d.running_total = running_total
@@ -87,7 +90,7 @@
     }).then(function (data) {
       console.log(data); // you should see the data in your browser's developer tools console 
       var datesArray = datesFunction(data)
-
+        console.log(data.length)
       /* Create bar plot using data from csv */
 
       // set the domains of X and Y scales based on data
@@ -107,12 +110,15 @@
                             .range([padding, width - padding])
 
       // Add bars to svg - create new elements based on your data
-      svg.selectAll('g')
+      var bar_width = (width - (2*padding)) / data.length
+      var bar_padding = 2;
+      svg.append('g')
+          .attr('id', 'bars')
+          .selectAll()
           .data(data)
           .enter()
           .append('rect')
-          .attr('id', 'bars')
-          .attr('width', (width - (2*padding)) / data.length)
+          .attr('width', bar_width - bar_padding)
           .attr('year', function(data) {
               return data.year
           })
@@ -133,9 +139,12 @@
       // Add the X Axis
       let xAxis = d3.axisBottom(x)
       svg.append('g')
-          .call(xAxis)
-          .attr('id', 'x-axis')
           .attr('transform', 'translate(0, ' + (height-padding) + ')')
+          .attr('id', 'x_axis')
+          .append('g')
+          .call(xAxis)
+
+
 
       // Add the text label for X Axis
       svg.append('text')
@@ -148,18 +157,28 @@
       // Add the Y Axis
       let yAxis = d3.axisLeft(y)
       svg.append('g')
-          .call(yAxis)
-          .attr('id', 'y-axis')
           .attr('transform', 'translate('+ padding + ', 0)')
+          .attr('id', 'y_axis')
+          .append('g')
+          .call(yAxis)
+
+
 
       // Add the text label for Y axis
-      svg.append()
+      svg.append('text')
+          .attr('id', 'y_axis_label')
+          .attr('text-anchor', 'end')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -height/2 + margin.top + margin.bottom)
+          .attr('y', -margin.left - margin.right)
+          .text('Running Total')
 
 
       svg.append('text')
           .attr('id', 'credit')
-          .attr('x', width - margin.right)
-          .attr('y', height - margin.bottom)
+          .attr('text-anchor', 'right')
+          .attr('x', width - 2*margin.right)
+          .attr('y', height + margin.top)
           .text('msyed46')
 
 
