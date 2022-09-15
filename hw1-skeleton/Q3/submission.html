@@ -5,7 +5,14 @@
 
 <head>
   <style>
-    <!-- define CSS rules -->
+    svg {
+        border: 1px solid red;
+    }
+
+    .bar {
+        color: brown;
+        background-color: green;
+    }
   </style>
 <html xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
 <!--[if gte mso 9]><xml>
@@ -33,10 +40,11 @@
   <script src="lib/d3-dsv/d3-dsv.min.js"></script>
   <script src="lib/d3-fetch/d3-fetch.min.js"></script>
 
-
   <script>
     // define the dimensions and margins for the graph
-
+    width = 960;
+    height = 500;
+    barPadding = 5;
 
     // define function to parse time in years format
 	
@@ -48,26 +56,70 @@
     // append svg element to the body of the page
     // set dimensions and position of the svg element
     var svg = d3.select("body").append("svg") 
+    svg.attr("width", width)
+        .attr("height", height)
 
 
     // Get the data
-	var pathToCsv = "";		// path to csv
+	var pathToCsv = "q3.csv";		// path to csv
 	
-    d3.dsv(",", pathToCsv, function (d) {
+    d3.dsv(",", pathToCsv, function (data) {
+        var year = parseInt(data.year);
+        var running_total = parseInt(data.running_total);
+        data.year = year;
+        data.running_total = running_total;
       return {
         // format data attributes if required
+        data
       }
     }).then(function (data) {
-      console.log(data); // you should see the data in your browser's developer tools console 
-      
+      //console.log(data); // you should see the data in your browser's developer tools console
+
+      var dataSetLength = 0
+      for (item in data) {
+          if(data.hasOwnProperty(item)) {
+              dataSetLength++;
+          }
+      }
+      var barWidth = width / dataSetLength;
+
       /* Create bar plot using data from csv */
-
+        console.log(data)
       // set the domains of X and Y scales based on data
-      x.domain();
-      y.domain();
-
+      //x.domain();
+      //y.domain();
+        DUMMY_DATA = [
+            {id: '1', value: 3},
+            {id: '2', value: 4},
+            {id: '3', value: 8},
+            {id: '4', value: 12}
+        ]
       // Add bars to svg - create new elements based on your data
-      svg.selectAll()
+      svg.selectAll("rect")
+          .data(data)
+          .enter()
+          .append("rect")
+          .classed("bar", true)
+          .attr('y', function(d) {
+              info = d.data.year;
+              return height - info;
+
+          })
+          .attr("width", barWidth - barPadding)
+          .attr("height", function(d) {
+              info = d.data;
+              h = info.running_total
+              height = h + 'px';
+              return height
+          })
+          .attr("translate", function(d, i){
+              info_d = d.data.running_total;
+              info_i = d.data.year
+              var translate = [width * i, 0];
+              return "translate(" + translate + ")";
+
+          })
+
 
 
       // Add the X Axis
