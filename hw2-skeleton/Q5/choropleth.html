@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+    <!-- add title -->
+    <title>World Map</title>
+    
+    <!-- import required libraries here -->
+    <script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+    
+    <style>
+        /* define CSS rules here */
+        html, body {
+            min-height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /*align-items: center;*/
+        }
+
+        #choropleth {
+            background-color: whitesmoke;
+            /*min-height: 500px;
+            min-width: 860px; */
+        }
+
+        #gameDropdown {
+            margin: 10px;
+            border: teal;
+            background-color: aliceblue;
+            outline-color: blue;
+            font-size: 16px;
+            font-family: Calibri;
+        }
+
+
+    </style>
+
+    <title></title>
+</head>
+
+
+<body>
+    <!-- Add heading for the visualization -->
+    <h1>World Map with games!!!</h1>
+    
+    <!-- Create dropdown element here. Options should be added after reading in game file, they should not be created here.-->
+    <label for="gameDropdown">Select Board Game: </label>
+    <select id="gameDropdown"></select>
+    
+    <!-- append visualization svg to this div-->
+    <div id="choropleth"></div>
+
+    <script>
+    
+        // enter code to define margin and dimensions for svg
+        var margin = {
+            top: 20,
+            right: 10,
+            bottom: 40,
+            left: 100
+        }
+        var width = 960 - margin.left - margin.right;
+        var height = 500 - margin.top - margin.bottom;
+        
+        // enter code to create svg
+        var svg = d3.select("#choropleth")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+
+        var map = svg.append("g").attr("id", "countries")
+        //var choro = svg.append("g").attr("id", "countries").attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        //var choro = svg.append("g").attr("id", "countries")
+        //var legend = svg.append("g").attr("id", "legend")
+        
+        // enter code to create color scale
+        var colorScale = d3.scaleQuantile()
+            .domain(d3.extent([0, 10]))
+            .range(["#edf8fb", "#b2e2e2", "#66c2a4", "#238b45"])
+
+        // enter code to define tooltip
+        var tip = d3.select("#choropleth").insert("div", "#choropleth").attr("id", "tooltip")
+        
+        // enter code to define projection and path required for Choropleth
+        // For grading, set the name of functions for projection and path as "projection" and "path"
+        // var projection = 
+        // var path =
+        var projection = d3.geoMercator().scale(70).center([0,20]).translate([width / 2 - margin.left, height / 2]);
+        projection = d3.geoNaturalEarth1().scale(width).translate([2*width-360, 2*height])
+        projection =d3.geoNaturalEarth1().scale(width / 1.5 / Math.PI).rotate([0, 0]).center([0, 0]).translate([width / 2, height / 3])
+        var path = d3.geoPath(projection)
+
+        // define any other global variables
+        var dataInput_json = d3.json("world_countries.json");
+        var dataInput_csv = d3.csv("ratings-by-country.csv")
+
+        Promise.all([
+            // enter code to read files
+            dataInput_csv, dataInput_json
+        ]).then(
+            // enter code to call ready() with required arguments
+            function(arr) {
+                gameData = arr[0];
+                world = arr[1];
+
+                ready("Check for errors", world=world, gameData=gameData);
+            }
+        );
+        
+        // this function should be called once the data from files have been read
+        // world: topojson from world_countries.json
+        // gameData: data from ratings-by-country.csv
+        
+        function ready(error, world, gameData) {
+            // enter code to extract all unique games from gameData
+            var unique_games = [...new Set(gameData.map(data => data.Game))].sort();
+
+            // enter code to append the game options to the dropdown
+            var dropdown = document.getElementById("gameDropdown");
+
+            for (var i=0; i < unique_games.length; i++) {
+                var option = document.createElement("option");
+                option.text = unique_games[i];
+                dropdown.add(option);
+            }
+            // event listener for the dropdown. Update choropleth and legend when selection changes. Call createMapAndLegend() with required arguments.
+            dropdown.addEventListener("change", function() {
+                var game = dropdown.value;
+
+                //Update choropleth and legend
+                createMapAndLegend(world=world, gameData=gameData, selectedGame=game)
+
+            })
+
+            // create Choropleth with default option. Call createMapAndLegend() with required arguments.
+            var currentSelection = dropdown.value;
+
+            createMapAndLegend(world=world, gameData=gameData, selectedGame=currentSelection)
+        }
+
+        // this function should create a Choropleth and legend using the world and gameData arguments for a selectedGame
+        // also use this function to update Choropleth and legend when a different game is selected from the dropdown
+        function createMapAndLegend(world, gameData, selectedGame){
+            console.log('inside createmapandlegend')
+
+            map.selectAll('path')
+                .data(world.features)
+                .enter()
+                .append('path')
+                .attr('d', path)
+                .attr('id', function(d) {
+                    return d.properties.name
+                })
+                .attr('fill', function(d) {
+                    let country = d.properties.name;
+                    let countryData = [];
+                    gameData.forEach(function(item) {
+                        if (item.Game == selectedGame) {
+                            countryData.push(item)
+                        }
+                    })
+                    let rating = -1
+                    countryData.every(function(item) {
+                        if (item["Country"] == country) {
+                            rating = item["Average Rating"]
+                            return false;
+                        }
+                        return true;
+                    })
+                    console.log(colorScale(rating))
+                    if (rating == -1) {
+                        return '#808080'
+                    } else {
+                        return colorScale(rating)
+                    }
+                })
+
+
+
+
+
+
+
+
+        
+            
+        }
+    </script>
+
+</body>
+
+</html>
